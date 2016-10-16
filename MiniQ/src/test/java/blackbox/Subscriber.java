@@ -1,35 +1,37 @@
 package blackbox;
 
-import com.company.miniq.broker.Broker;
+import com.company.miniq.broker.MiniQ;
 import com.company.miniq.message.Envelope;
+import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Random;
 
 public class Subscriber implements Runnable {
+    final static Logger logger = Logger.getLogger("Subscriber");
 
-    private final Broker broker;
+    private final MiniQ miniQ;
 
-    public Subscriber(Broker broker) {
-        this.broker = broker;
+    public Subscriber(MiniQ miniQ) {
+        this.miniQ = miniQ;
     }
 
     @Override
     public void run() {
         for(int i = 1; i <= 100; i++) {
-            List<Envelope> messages = broker.consume();
+            List<Envelope> messages = miniQ.consume();
             for(Envelope e : messages) {
 
                 if(e.isRedelivered()){
-                    System.out.println("Consumed "+e.getId()+ " ReDelivered");
+                    logger.debug("Consumed- "+e.getId()+ " ReDelivered");
                 } else {
-                    System.out.println("Consumed " + e.getId());
+                    logger.debug("Consumed- " + e.getId());
                 }
 
                 if(new Random().nextInt(10) == 4 ) {
-                    System.out.println("***** Skip ACK for "+e.getId());
+                    logger.debug("** Skip ACK for messageId" + e.getId());
                 } else {
-                    broker.acknowledge(e.getId());
+                    miniQ.acknowledge(e.getId());
                 }
             }
             try {

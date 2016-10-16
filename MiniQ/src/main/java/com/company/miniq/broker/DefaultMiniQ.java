@@ -4,9 +4,9 @@ import com.company.miniq.broker.IdGenerator.DefaultIdGenerator;
 import com.company.miniq.broker.IdGenerator.IdGenerator;
 import com.company.miniq.broker.config.Configuration;
 import com.company.miniq.broker.storage.MessagesStorage;
-import com.company.miniq.broker.storage.TransitStorage;
 import com.company.miniq.broker.storage.Store;
 import com.company.miniq.broker.storage.TransitMessagesStore;
+import com.company.miniq.broker.storage.TransitStorage;
 import com.company.miniq.message.Envelope;
 import com.company.miniq.message.InTransitEnvelop;
 import com.company.miniq.message.Message;
@@ -14,9 +14,8 @@ import com.company.miniq.message.MessageId;
 import com.company.miniq.scheduler.Scheduler;
 
 import java.util.List;
-import java.util.TimerTask;
 
-public class DefaultBroker extends TimerTask implements Broker {
+public class DefaultMiniQ implements MiniQ {
     private final Configuration config;
     private IdGenerator idGenerator;
     private final Store<Envelope> messageStorage;
@@ -24,34 +23,25 @@ public class DefaultBroker extends TimerTask implements Broker {
 
     private final Scheduler scheduler;
 
-    public DefaultBroker(Configuration config,
-                         IdGenerator idGenerator,
-                         Store<Envelope> messageStorage,
-                         TransitStorage inTransitMessageStore) {
+    public DefaultMiniQ(Configuration config,
+                        IdGenerator idGenerator,
+                        Store<Envelope> messageStorage,
+                        TransitStorage inTransitMessageStore) {
         this.config = config;
         this.idGenerator = idGenerator;
         this.messageStorage = messageStorage;
         this.inTransitMessageStore = inTransitMessageStore;
-        this.scheduler = new Scheduler(this);
+        this.scheduler = new Scheduler(messageStorage, inTransitMessageStore);
 
         scheduler.start();
     }
 
-    public DefaultBroker(Configuration config) {
+    public DefaultMiniQ(Configuration config) {
         this(
             config,
             new DefaultIdGenerator(),
             new MessagesStorage<Envelope>(),
             new TransitMessagesStore());
-    }
-
-    @Override
-    public void run() {
-        List<InTransitEnvelop> timedOutMessages = inTransitMessageStore.getElementInsertedBefore(System.currentTimeMillis());
-        for(InTransitEnvelop message : timedOutMessages) {
-            message.getEnvelope().setRedelivered(true);
-            messageStorage.add(message.getEnvelope());
-        }
     }
 
     @Override
@@ -80,14 +70,6 @@ public class DefaultBroker extends TimerTask implements Broker {
         return messages;
     }
 
-    private void addToInTransit(List<Envelope> messages){
-        long expiryTime = System.currentTimeMillis() + (config.getAcknowledgeWaitTimeOut() * 1000) ;
-
-        for(Envelope message: messages) {
-            inTransitMessageStore.add(new InTransitEnvelop(expiryTime, message));
-        }
-    }
-
     @Override
     public void acknowledge(MessageId messageId) {
         inTransitMessageStore.remove(messageId);
@@ -96,5 +78,13 @@ public class DefaultBroker extends TimerTask implements Broker {
     @Override
     public void close() {
         scheduler.stop();
+    }
+
+    private void addToInTransit(List<Envelope> messages){
+        long expiryTime = System.currentTimeMillis() + (config.getAcknowledgeWaitTimeOut() * 1000) ;
+
+        for(Envelope message: messages) {
+            inTransitMessageStore.add(new InTransitEnvelop(expiryTime, message));
+        }
     }
 }

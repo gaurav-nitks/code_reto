@@ -6,7 +6,10 @@ import com.company.miniq.message.MessageId;
 
 import java.util.List;
 
-public interface Broker {
+/*
+    This interface defines miniQ.
+ */
+public interface MiniQ {
     MessageId publish(Message message);
 
     List<Envelope> consume();

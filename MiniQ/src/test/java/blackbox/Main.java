@@ -1,35 +1,37 @@
 package blackbox;
 
-import com.company.miniq.broker.Broker;
-import com.company.miniq.broker.DefaultBroker;
+import com.company.miniq.broker.MiniQ;
+import com.company.miniq.broker.DefaultMiniQ;
 import com.company.miniq.broker.config.Configuration;
-import com.company.miniq.scheduler.Scheduler;
+import org.apache.log4j.Logger;
 
 
 public class Main {
+    final static Logger logger = Logger.getLogger("Main");
+
     public static void main(String[] args) {
-        Broker broker = new DefaultBroker(new Configuration.ConfigurationBuilder().setAcknowledgeWaitTimeOut(1).build());
+        MiniQ miniQ = new DefaultMiniQ(new Configuration.ConfigurationBuilder().setAcknowledgeWaitTimeOut(1).build());
 
-        Publisher p = new Publisher(broker);
+        Publisher publisher = new Publisher(miniQ);
 
-        Subscriber s = new Subscriber(broker);
+        Subscriber subscriber = new Subscriber(miniQ);
 
-        Thread pt = new Thread(p);
+        Thread pubThread = new Thread(publisher);
 
-        Thread ct = new Thread(s);
+        Thread subThread = new Thread(subscriber);
 
-        pt.start();
-        ct.start();
+        pubThread.start();
+        subThread.start();
 
-        while (pt.isAlive() || ct.isAlive()) {
+        while (pubThread.isAlive() || subThread.isAlive()) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        System.out.printf("BYE BYE");
-        broker.close();
+        logger.debug("BYE BYE");
+        miniQ.close();
     }
 }

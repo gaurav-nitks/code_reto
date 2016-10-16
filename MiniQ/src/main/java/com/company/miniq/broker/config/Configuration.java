@@ -19,7 +19,9 @@ public class Configuration {
         private int acknowledgeWaitTimeOut = 5; // In Seconds
 
         public ConfigurationBuilder setAcknowledgeWaitTimeOut(int time) {
-            this.acknowledgeWaitTimeOut = time;
+            if(time > 0) {
+                this.acknowledgeWaitTimeOut = time;
+            }
             return this;
         }
 

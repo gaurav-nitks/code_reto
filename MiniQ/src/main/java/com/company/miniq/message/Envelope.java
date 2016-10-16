@@ -1,9 +1,13 @@
 package com.company.miniq.message;
 
+/*
+    Envelope is metadata + actual message (sent by publisher).
+    Subscribers will receive Envelopes when they consume.
+ */
 public class Envelope{
     private final MessageId id;
     private final Message message;
-    private final long insertTime;
+    private final long createTime;
 
     public void setRedelivered(boolean isRedelivered) {
         this.isRedelivered = isRedelivered;
@@ -11,10 +15,10 @@ public class Envelope{
 
     private boolean isRedelivered = false;
 
-    public Envelope(MessageId id, Message message, long insertTime) {
+    public Envelope(MessageId id, Message message, long createTime) {
         this.id = id;
         this.message = message;
-        this.insertTime = insertTime;
+        this.createTime = createTime;
     }
 
     public Envelope(MessageId id, Message message) {
@@ -33,7 +37,7 @@ public class Envelope{
         return id;
     }
 
-    public long getInsertTime() {
-        return insertTime;
+    public long getCreateTime() {
+        return createTime;
     }
 }
